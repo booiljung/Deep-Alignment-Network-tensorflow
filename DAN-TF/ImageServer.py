@@ -6,8 +6,12 @@ from six.moves import cPickle as pickle
 import glob
 from os import path
 
+
+
 class ImageServer(object):
+
     def __init__(self, imgSize=[112, 112], frameFraction=0.25, initialization='box', color=False):
+
         self.origLandmarks = []
         self.filenames = []
         self.mirrors = []
@@ -21,12 +25,15 @@ class ImageServer(object):
         self.imgSize = imgSize
         self.frameFraction = frameFraction
         self.initialization = initialization
-        self.color = color;
+        self.color = color
 
         self.boundingBoxes = []
 
+
+
     @staticmethod
     def Load(filename):
+
         imageServer = ImageServer()
         arrays = np.load(filename)
         imageServer.__dict__.update(arrays)
@@ -36,7 +43,10 @@ class ImageServer(object):
 
         return imageServer
 
+
+
     def Save(self, datasetDir, filename=None):
+
         if filename is None:
             filename = "dataset_nimgs={0}_perturbations={1}_size={2}".format(len(self.imgs), list(self.perturbations), self.imgSize)
             if self.color:
@@ -46,10 +56,13 @@ class ImageServer(object):
         arrays = {key:value for key, value in self.__dict__.items() if not key.startswith('__') and not callable(key)}
         np.savez(datasetDir + filename, **arrays)
 
+
+
     def PrepareData(self, imageDirs, boundingBoxFiles, meanShape, startIdx, nImgs, mirrorFlag):
-        filenames = []#此list和filenamesInDir完全一样，可以去除
-        landmarks = []#此list用于存储特征点坐标
-        boundingBoxes = []#此list用于存储bbx
+        
+        filenames = [] # 이 목록은 filenamesInDir과 완전히 동일하므로 제거 할 수 있습니다. <<< 此list和filenamesInDir完全一样，可以去除
+        landmarks = [] # 이 리스트는 특징점 좌표를 저장하는 데 사용됩니다. <<< 此list用于存储特征点坐标
+        boundingBoxes = [] # 이 목록은 bbx를 저장하는 데 사용됩니다. <<< 此list用于存储bbx
         # import pdb; pdb.set_trace()
 
         for i in range(len(imageDirs)):
@@ -88,13 +101,16 @@ class ImageServer(object):
         self.meanShape = meanShape
         self.boundingBoxes = boundingBoxes
 
+
+
     def LoadImages(self):
+
         self.imgs = []
         self.initLandmarks = []
         self.gtLandmarks = []
 
         for i in range(len(self.filenames)):
-            #这段代码写得不好，self.color并没有实际意义
+            # 이 코드는 잘 작성되지 않았으며 self.color는 실제적인 의미가 없습니다. <<<  这段代码写得不好，self.color并没有实际意义
             img = ndimage.imread(self.filenames[i])
             if self.color:
             	
@@ -113,27 +129,31 @@ class ImageServer(object):
             if not self.color:
             #     img = np.transpose(img, (2, 0, 1))
             # else:
-                img = img[np.newaxis]#img从shape(H,W)变成shape(1,H,W)
+                img = img[np.newaxis] # Img는 모양 (H, W)에서 모양 (1, H, W)로 바뀝니다. <<< img从shape(H,W)变成shape(1,H,W)
                 # img = np.transpose(img, (1, 2, 0))
 
             groundTruth = self.origLandmarks[i]
 
             if self.initialization == 'rect':
-                bestFit = utils.bestFitRect(groundTruth, self.meanShape)#仅仅把meanshape适应进入由landmark确定的框中
+                bestFit = utils.bestFitRect(groundTruth, self.meanShape) # 랜드 마크에 의해 결정된 상자에 도구 모양을 맞추기 만하면됩니다. <<< 仅仅把meanshape适应进入由landmark确定的框中
             elif self.initialization == 'similarity':
-                bestFit = utils.bestFit(groundTruth, self.meanShape)#找到meanShape到gt的最优变换，并变换之
+                bestFit = utils.bestFit(groundTruth, self.meanShape) # gt에 대한 meanShape의 최상의 변환을 찾아 변환하십시오. <<< 找到meanShape到gt的最优变换，并变换之
             elif self.initialization == 'box':
-                bestFit = utils.bestFitRect(groundTruth, self.meanShape, box=self.boundingBoxes[i])#仅仅把meanshape适应进入由检测到的bbx确定的框中
+                bestFit = utils.bestFitRect(groundTruth, self.meanShape, box=self.boundingBoxes[i]) # 감지 된 bbx에 의해 결정된 상자에 도구 모양을 맞 춥니 다. <<< 仅仅把meanshape适应进入由检测到的bbx确定的框中
 
             self.imgs.append(img)
             self.initLandmarks.append(bestFit)
             self.gtLandmarks.append(groundTruth)
 
         self.initLandmarks = np.array(self.initLandmarks)
-        self.gtLandmarks = np.array(self.gtLandmarks)    
+        self.gtLandmarks = np.array(self.gtLandmarks)
+
+
 
     def GeneratePerturbations(self, nPerturbations, perturbations):
+
         self.perturbations = perturbations
+
         meanShapeSize = max(self.meanShape.max(axis=0) - self.meanShape.min(axis=0))
         destShapeSize = min(self.imgSize) * (1 - 2 * self.frameFraction)
         scaledMeanShape = self.meanShape * destShapeSize / meanShapeSize
@@ -174,7 +194,10 @@ class ImageServer(object):
         self.initLandmarks = np.array(newInitLandmarks)
         self.gtLandmarks = np.array(newGtLandmarks)
 
+
+
     def CropResizeRotateAll(self):
+
         newImgs = []  
         newGtLandmarks = []
         newInitLandmarks = []   
@@ -189,6 +212,8 @@ class ImageServer(object):
         self.imgs = np.array(newImgs)
         self.initLandmarks = np.array(newInitLandmarks)
         self.gtLandmarks = np.array(newGtLandmarks)  
+
+
 
     def NormalizeImages(self, imageServer=None):
         self.imgs = self.imgs.astype(np.float32)
@@ -231,7 +256,10 @@ class ImageServer(object):
         plt.savefig("../stdDevImg.jpg")
         plt.clf()
 
+
+
     def CropResizeRotate(self, img, initShape, groundTruth):
+
         meanShapeSize = max(self.meanShape.max(axis=0) - self.meanShape.min(axis=0))
         destShapeSize = min(self.imgSize) * (1 - 2 * self.frameFraction)
 

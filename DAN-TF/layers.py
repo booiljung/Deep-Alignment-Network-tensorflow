@@ -1,26 +1,36 @@
 #coding=utf-8
 
-# 自定义的一些层
+# 맞춤 설정의 일부 레이어 <<< 自定义的一些层
 
 import tensorflow as tf
 import numpy as np
 import itertools
 
+
 IMGSIZE = 112
 N_LANDMARK = 68
 
-Pixels = tf.constant(np.array([(x, y) for x in range(IMGSIZE) for y in range(IMGSIZE)], dtype=np.float32),\
-    shape=[IMGSIZE,IMGSIZE,2])
+
+Pixels = tf.constant(
+    np.array(
+        [(x, y) for x in range(IMGSIZE) for y in range(IMGSIZE)],
+        dtype=np.float32
+    ),
+    shape=[IMGSIZE,IMGSIZE,2]
+)
 
 
 def TransformParamsLayer(SrcShapes, DstShape):
+
     '''
     SrcShapes: [N, (N_LANDMARK x 2)]
     DstShape: [N_LANDMARK x 2,]
     return: [N, 6]
     '''
+
     # import pdb; pdb.set_trace()
     def bestFit(src, dst):
+
         # import pdb; pdb.set_trace()
         source = tf.reshape(src, (-1, 2))
         destination = tf.reshape(dst, (-1, 2))
@@ -55,6 +65,7 @@ def TransformParamsLayer(SrcShapes, DstShape):
     return tf.map_fn(lambda s: bestFit(s, DstShape), SrcShapes)
 
 
+
 def AffineTransformLayer(Image, Param):
     '''
     Image: [N, IMGSIZE, IMGSIZE, 2]
@@ -72,6 +83,7 @@ def AffineTransformLayer(Image, Param):
     A = tf.matrix_transpose(A)
 
     def affine_transform(I, A, T):
+
         I = tf.reshape(I, [IMGSIZE, IMGSIZE])
 
         SrcPixels = tf.matmul(tf.reshape(Pixels, [IMGSIZE * IMGSIZE,2]), A) + T
@@ -95,7 +107,9 @@ def AffineTransformLayer(Image, Param):
     return tf.map_fn(lambda args: affine_transform(args[0], args[1], args[2]),(Image, A, T), dtype=tf.float32)
 
 
+
 def LandmarkTransformLayer(Landmark, Param, Inverse=False):
+
     '''
     Landmark: [N, N_LANDMARK x 2]
     Param: [N, 6]
@@ -119,6 +133,7 @@ Offsets = tf.constant(np.array(list(itertools.product(range(-HalfSize, HalfSize)
     range(-HalfSize, HalfSize))), dtype=np.int32), shape=(16, 16, 2))
 
 
+
 def LandmarkImageLayer(Landmarks):
     
     def draw_landmarks(L):
@@ -139,6 +154,8 @@ def LandmarkImageLayer(Landmarks):
         return Ret
     return tf.map_fn(draw_landmarks, Landmarks)
 
+
+
 def GetHeatMap(Landmark):
     
     def Do(L):
@@ -149,4 +166,5 @@ def GetHeatMap(Landmark):
         Ret = 1 / (tf.norm(tf.map_fn(DoIn,Landmarks),axis = 3) + 1)
         Ret = tf.reshape(tf.reduce_max(Ret,0),[IMGSIZE,IMGSIZE,1])
         return Ret
+        
     return tf.map_fn(Do,Landmark)

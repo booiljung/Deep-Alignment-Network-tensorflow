@@ -16,6 +16,7 @@ validationSet = ImageServer.Load(datasetDir + "dataset_nimgs=9_perturbations=[]_
 # 两个stage训练，不宜使用estimator
 # regressor = tf.estimator.Estimator(model_fn=DAN,
 # 	                                params={})
+
 def evaluateError(landmarkGt, landmarkP):
     e = np.zeros(68)
     ocular_dist = np.mean(np.linalg.norm(landmarkGt[36:42] - landmarkGt[42:48], axis=1))
@@ -24,12 +25,15 @@ def evaluateError(landmarkGt, landmarkP):
     e = e / ocular_dist
     return e
 
+
+
 def evaluateBatchError(landmarkGt, landmarkP, batch_size):
     e = np.zeros([batch_size, 68])
     for i in range(batch_size):
         e[i] = evaluateError(landmarkGt[i], landmarkP[i])
     mean_err = e[:,:].mean()#axis=0)
     return mean_err
+
 
 
 def getLabelsForDataset(imageServer):
@@ -40,6 +44,8 @@ def getLabelsForDataset(imageServer):
     y = imageServer.gtLandmarks
 
     return y.reshape((nSamples, nLandmarks * 2))
+
+
 
 nSamples = trainSet.gtLandmarks.shape[0]
 imageHeight = trainSet.imgSize[0]

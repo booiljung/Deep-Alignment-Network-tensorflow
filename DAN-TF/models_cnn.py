@@ -19,7 +19,9 @@ from ops import *
 IMGSIZE = 112
 N_LANDMARK = 68
 
+
 def NormRmse(GroudTruth, Prediction):
+
     Gt = tf.reshape(GroudTruth, [-1, N_LANDMARK, 2])
     Pt = tf.reshape(Prediction, [-1, N_LANDMARK, 2])
     loss = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.squared_difference(Gt, Pt), 2)), 1)
@@ -88,7 +90,5 @@ def CNN():
     Ret_dict['S1_Ret'] = logits
     Ret_dict['S1_Cost'] = S1_Cost
     Ret_dict['S1_Optimizer'] = S1_Optimizer
-
-
     
     return Ret_dict
